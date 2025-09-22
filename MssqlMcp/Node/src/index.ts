@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Load environment variables
-import 'dotenv/config';
+import "dotenv/config";
 
 // External imports
 import sql from "mssql";
@@ -12,8 +12,8 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import express from 'express';
-import cors from 'cors';
+import express from "express";
+import cors from "cors";
 
 // Internal imports
 import { UpdateDataTool } from "./tools/UpdateDataTool.js";
@@ -208,97 +208,100 @@ async function runServer() {
   try {
     // Parse command line arguments
     const args = process.argv.slice(2);
-    const transportType = args.includes('--http') ? 'http' : 'stdio';
-    const port = parseInt(process.env.PORT || '3000', 10);
-    const host = process.env.HOST || 'localhost';
+    const transportType = args.includes("--http") ? "http" : "stdio";
+    const port = parseInt(process.env.PORT || "3000", 10);
+    const host = process.env.HOST || "localhost";
 
-    if (transportType === 'http') {
+    if (transportType === "http") {
       console.log(`Starting MCP server with HTTP transport on ${host}:${port}`);
-      
+
       // Create Express app
       const app = express();
-      
+
       // Configure CORS
-      app.use(cors({
-        origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
-        credentials: true
-      }));
-      
+      app.use(
+        cors({
+          origin: process.env.ALLOWED_ORIGINS?.split(",") || "*",
+          credentials: true,
+        })
+      );
+
       // Parse JSON bodies
       app.use(express.json());
-      
+
       // Store transports by session ID
       const transports: Record<string, any> = {};
-      
+
       // SSE endpoint for establishing the stream
-      app.get('/sse', async (req, res) => {
-        console.log('Received GET request to /sse (establishing SSE stream)');
+      app.get("/sse", async (req, res) => {
+        console.log("Received GET request to /sse (establishing SSE stream)");
         try {
           // Create a new SSE transport for the client
           // The endpoint for POST messages is '/message'
-          const transport = new SSEServerTransport('/message', res);
-          
+          const transport = new SSEServerTransport("/message", res);
+
           // Store the transport by session ID
           const sessionId = transport.sessionId;
           transports[sessionId] = transport;
-          
+
           // Set up onclose handler to clean up transport when closed
           transport.onclose = () => {
             console.log(`SSE transport closed for session ${sessionId}`);
             delete transports[sessionId];
           };
-          
+
           // Connect the transport to the MCP server
           await server.connect(transport);
           console.log(`Established SSE stream with session ID: ${sessionId}`);
-          
         } catch (error) {
-          console.error('Error establishing SSE stream:', error);
+          console.error("Error establishing SSE stream:", error);
           if (!res.headersSent) {
-            res.status(500).send('Error establishing SSE stream');
+            res.status(500).send("Error establishing SSE stream");
           }
         }
       });
-      
+
       // Messages endpoint for receiving client JSON-RPC requests
-      app.post('/message', async (req, res) => {
-        console.log('Received POST request to /message');
-        
+      app.post("/message", async (req, res) => {
+        console.log("Received POST request to /message");
+
         // Extract session ID from URL query parameter
         const sessionId = req.query.sessionId as string;
         if (!sessionId) {
-          console.error('No session ID provided in request URL');
-          res.status(400).send('Missing sessionId parameter');
+          console.error("No session ID provided in request URL");
+          res.status(400).send("Missing sessionId parameter");
           return;
         }
-        
+
         const transport = transports[sessionId];
         if (!transport) {
-          console.error(`No active transport found for session ID: ${sessionId}`);
-          res.status(404).send('Session not found');
+          console.error(
+            `No active transport found for session ID: ${sessionId}`
+          );
+          res.status(404).send("Session not found");
           return;
         }
-        
+
         try {
           // Handle the POST message with the transport
           await transport.handlePostMessage(req, res, req.body);
         } catch (error) {
-          console.error('Error handling request:', error);
+          console.error("Error handling request:", error);
           if (!res.headersSent) {
-            res.status(500).send('Error handling request');
+            res.status(500).send("Error handling request");
           }
         }
       });
-      
+
       // Health check endpoint
-      app.get('/health', (req, res) => {
-        res.json({ 
-          status: 'ok', 
+      app.get("/health", (req, res) => {
+        res.json({
+          status: "ok",
           timestamp: new Date().toISOString(),
-          activeSessions: Object.keys(transports).length
+          activeSessions: Object.keys(transports).length,
         });
       });
-      
+
       // Start HTTP server
       const httpServer = app.listen(port, host, () => {
         console.log(`MSSQL MCP Server running on http://${host}:${port}`);
@@ -306,11 +309,11 @@ async function runServer() {
         console.log(`Message endpoint: http://${host}:${port}/message`);
         console.log(`Health check: http://${host}:${port}/health`);
       });
-      
+
       // Graceful shutdown
-      process.on('SIGINT', async () => {
-        console.log('\nShutting down HTTP server...');
-        
+      process.on("SIGINT", async () => {
+        console.log("\nShutting down HTTP server...");
+
         // Close all active transports
         for (const sessionId in transports) {
           try {
@@ -318,18 +321,20 @@ async function runServer() {
             await transports[sessionId].close();
             delete transports[sessionId];
           } catch (error) {
-            console.error(`Error closing transport for session ${sessionId}:`, error);
+            console.error(
+              `Error closing transport for session ${sessionId}:`,
+              error
+            );
           }
         }
-        
+
         httpServer.close(() => {
-          console.log('HTTP server shutdown complete');
+          console.log("HTTP server shutdown complete");
           process.exit(0);
         });
       });
-      
     } else {
-      console.log('Starting MCP server with stdio transport');
+      console.log("Starting MCP server with stdio transport");
       const transport = new StdioServerTransport();
       await server.connect(transport);
     }

@@ -1,4 +1,4 @@
-# MSSQL Database MCP  Server
+# MSSQL Database MCP Server
 
 <div align="center">
   <img src="./src/img/logo.png" alt="MSSQL Database MCP server logo" width="400"/>
@@ -9,6 +9,7 @@
 This is a server that lets your LLMs (like Claude) talk directly to your MSSQL Database data! Think of it as a friendly translator that sits between your AI assistant and your database, making sure they can chat securely and efficiently.
 
 ### Quick Example
+
 ```text
 You: "Show me all customers from New York"
 Claude: *queries your MSSQL Database database and gives you the answer in plain English*
@@ -29,19 +30,21 @@ This server leverages the Model Context Protocol (MCP), a versatile framework th
 ## Quick Start 🚀
 
 ### Prerequisites
+
 - Node.js 14 or higher
 - Claude Desktop or VS Code with Agent extension
 
 ### Set up project
 
 1. **Install Dependencies**  
-   Run the following command in the root folder to install all necessary dependencies:  
+   Run the following command in the root folder to install all necessary dependencies:
+
    ```bash
    npm install
    ```
 
 2. **Build the Project**  
-   Compile the project by running:  
+   Compile the project by running:
    ```bash
    npm run build
    ```
@@ -49,6 +52,7 @@ This server leverages the Model Context Protocol (MCP), a versatile framework th
 ## Configuration Setup
 
 The MSSQL MCP Server supports two transport modes:
+
 1. **Stdio Transport** - For traditional MCP client integrations (VS Code Agent, Claude Desktop)
 2. **HTTP Transport** - For web-based applications and direct HTTP API access
 
@@ -57,6 +61,7 @@ The MSSQL MCP Server supports two transport modes:
 The HTTP transport allows you to interact with your MSSQL database through a REST API with Server-Sent Events (SSE) for real-time communication.
 
 1. **Start HTTP Server**
+
    ```bash
    npm run start:http
    # Or with development mode
@@ -65,6 +70,7 @@ The HTTP transport allows you to interact with your MSSQL database through a RES
 
 2. **Environment Configuration**
    Create or update your `.env` file with HTTP transport settings:
+
    ```env
    # Database Configuration
    SERVER_NAME=your-server-name.database.windows.net
@@ -73,7 +79,7 @@ The HTTP transport allows you to interact with your MSSQL database through a RES
    SQL_PASSWORD=your-password
    READONLY=false
    TRUST_SERVER_CERTIFICATE=true
-   
+
    # HTTP Transport Configuration
    PORT=3000
    HOST=localhost
@@ -82,35 +88,38 @@ The HTTP transport allows you to interact with your MSSQL database through a RES
 
 3. **API Endpoints**
    Once started, the server provides these endpoints:
+
    - **SSE Connection**: `GET http://localhost:3000/sse` - For real-time communication
    - **Send Messages**: `POST http://localhost:3000/message` - For sending JSON-RPC requests
    - **Health Check**: `GET http://localhost:3000/health` - Server status
 
 4. **Example Usage**
+
    ```javascript
    // Connect to SSE endpoint for real-time responses
-   const eventSource = new EventSource('http://localhost:3000/sse');
-   
+   const eventSource = new EventSource("http://localhost:3000/sse");
+
    eventSource.onmessage = (event) => {
      const response = JSON.parse(event.data);
-     console.log('Server response:', response);
+     console.log("Server response:", response);
    };
-   
+
    // Send a tool call request
-   fetch('http://localhost:3000/message', {
-     method: 'POST',
-     headers: { 'Content-Type': 'application/json' },
+   fetch("http://localhost:3000/message", {
+     method: "POST",
+     headers: { "Content-Type": "application/json" },
      body: JSON.stringify({
-       jsonrpc: '2.0',
+       jsonrpc: "2.0",
        id: 1,
-       method: 'tools/call',
+       method: "tools/call",
        params: {
-         name: 'read_data',
+         name: "read_data",
          arguments: {
-           query: 'SELECT TOP 10 * FROM BlendSheets ORDER BY CreatedDateTimeUTC DESC'
-         }
-       }
-     })
+           query:
+             "SELECT TOP 10 * FROM BlendSheets ORDER BY CreatedDateTimeUTC DESC",
+         },
+       },
+     }),
    });
    ```
 
@@ -121,11 +130,13 @@ For traditional MCP client integrations (VS Code Agent, Claude Desktop), use std
 ### Option 1: VS Code Agent Setup
 
 1. **Install VS Code Agent Extension**
+
    - Open VS Code
    - Go to Extensions (Ctrl+Shift+X)
    - Search for "Agent" and install the official Agent extension
 
 2. **Create MCP Configuration File**
+
    - Create a `.vscode/mcp.json` file in your workspace
    - Add the following configuration:
 
@@ -133,16 +144,16 @@ For traditional MCP client integrations (VS Code Agent, Claude Desktop), use std
    {
      "servers": {
        "mssql-nodejs": {
-          "type": "stdio",
-          "command": "node",
-          "args": ["q:\\Repos\\SQL-AI-samples\\MssqlMcp\\Node\\dist\\index.js"],
-          "env": {
-            "SERVER_NAME": "your-server-name.database.windows.net",
-            "DATABASE_NAME": "your-database-name",
-            "READONLY": "false"
-          }
-        }
-      }
+         "type": "stdio",
+         "command": "node",
+         "args": ["q:\\Repos\\SQL-AI-samples\\MssqlMcp\\Node\\dist\\index.js"],
+         "env": {
+           "SERVER_NAME": "your-server-name.database.windows.net",
+           "DATABASE_NAME": "your-database-name",
+           "READONLY": "false"
+         }
+       }
+     }
    }
    ```
 
@@ -152,25 +163,26 @@ For traditional MCP client integrations (VS Code Agent, Claude Desktop), use std
    - Click "Edit in settings.json"
    - Add the following configuration:
 
-  ```json
-   {
-    "mcp": {
-        "servers": {
-            "mssql": {
-                "command": "node",
-                "args": ["C:/path/to/your/Node/dist/index.js"],
-                "env": {
-                "SERVER_NAME": "your-server-name.database.windows.net",
-                "DATABASE_NAME": "your-database-name",
-                "READONLY": "false"
-                }
-            }
+```json
+{
+  "mcp": {
+    "servers": {
+      "mssql": {
+        "command": "node",
+        "args": ["C:/path/to/your/Node/dist/index.js"],
+        "env": {
+          "SERVER_NAME": "your-server-name.database.windows.net",
+          "DATABASE_NAME": "your-database-name",
+          "READONLY": "false"
         }
+      }
     }
   }
-  ```
+}
+```
 
 4. **Restart VS Code**
+
    - Close and reopen VS Code for the changes to take effect
 
 5. **Verify MCP Server**
@@ -181,6 +193,7 @@ For traditional MCP client integrations (VS Code Agent, Claude Desktop), use std
 ### Option 2: Claude Desktop Setup
 
 1. **Open Claude Desktop Settings**
+
    - Navigate to File → Settings → Developer → Edit Config
    - Open the `claude_desktop_config` file
 
@@ -218,6 +231,7 @@ For traditional MCP client integrations (VS Code Agent, Claude Desktop), use std
 ## Sample Configurations
 
 You can find sample configuration files in the `src/samples/` folder:
+
 - `claude_desktop_config.json` - For Claude Desktop
 - `vscode_agent_config.json` - For VS Code Agent
 
