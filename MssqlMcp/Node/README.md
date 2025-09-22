@@ -48,6 +48,76 @@ This server leverages the Model Context Protocol (MCP), a versatile framework th
 
 ## Configuration Setup
 
+The MSSQL MCP Server supports two transport modes:
+1. **Stdio Transport** - For traditional MCP client integrations (VS Code Agent, Claude Desktop)
+2. **HTTP Transport** - For web-based applications and direct HTTP API access
+
+### HTTP Transport Setup (New!) 🌐
+
+The HTTP transport allows you to interact with your MSSQL database through a REST API with Server-Sent Events (SSE) for real-time communication.
+
+1. **Start HTTP Server**
+   ```bash
+   npm run start:http
+   # Or with development mode
+   npm run dev:http
+   ```
+
+2. **Environment Configuration**
+   Create or update your `.env` file with HTTP transport settings:
+   ```env
+   # Database Configuration
+   SERVER_NAME=your-server-name.database.windows.net
+   DATABASE_NAME=your-database-name
+   SQL_USER=your-username
+   SQL_PASSWORD=your-password
+   READONLY=false
+   TRUST_SERVER_CERTIFICATE=true
+   
+   # HTTP Transport Configuration
+   PORT=3000
+   HOST=localhost
+   ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+   ```
+
+3. **API Endpoints**
+   Once started, the server provides these endpoints:
+   - **SSE Connection**: `GET http://localhost:3000/sse` - For real-time communication
+   - **Send Messages**: `POST http://localhost:3000/message` - For sending JSON-RPC requests
+   - **Health Check**: `GET http://localhost:3000/health` - Server status
+
+4. **Example Usage**
+   ```javascript
+   // Connect to SSE endpoint for real-time responses
+   const eventSource = new EventSource('http://localhost:3000/sse');
+   
+   eventSource.onmessage = (event) => {
+     const response = JSON.parse(event.data);
+     console.log('Server response:', response);
+   };
+   
+   // Send a tool call request
+   fetch('http://localhost:3000/message', {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify({
+       jsonrpc: '2.0',
+       id: 1,
+       method: 'tools/call',
+       params: {
+         name: 'read_data',
+         arguments: {
+           query: 'SELECT TOP 10 * FROM BlendSheets ORDER BY CreatedDateTimeUTC DESC'
+         }
+       }
+     })
+   });
+   ```
+
+### Traditional MCP Client Setup
+
+For traditional MCP client integrations (VS Code Agent, Claude Desktop), use stdio transport:
+
 ### Option 1: VS Code Agent Setup
 
 1. **Install VS Code Agent Extension**

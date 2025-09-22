@@ -9,12 +9,17 @@
     "build": "tsc && shx chmod +x dist/*.js",
     "prepare": "npm run build",
     "watch": "tsc --watch",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "start:http": "node dist/index.js --http",
+    "dev": "npm run build && npm run start",
+    "dev:http": "npm run build && npm run start:http"
   },
   "files": [
     "dist"
   ],
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
     "@types/mssql": "^9.1.7",
     "@types/node": "^16.18.126",
     "shx": "^0.3.4",
